@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kalkulačka palubek 2026</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:18px;font-family:Arial,Helvetica,sans-serif;background:#f2eee7;color:#2b2722}
+main{max-width:760px;margin:auto;background:#fff;border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,.12);overflow:hidden}
+header{background:#654631;color:#fff;padding:24px}
+header h1{margin:0 0 7px;font-size:31px}
+header p{margin:0;line-height:1.45}
+section{padding:22px}
+label{display:block;font-weight:700;margin:17px 0 7px}
+select,input,button{width:100%;min-height:52px;padding:12px;font-size:17px;border-radius:10px}
+select,input{border:1px solid #c9c0b4;background:#fff}
+button{margin-top:20px;border:0;background:#654631;color:#fff;font-weight:700;cursor:pointer}
+#result{margin-top:20px;padding:18px;border:1px solid #ddd3c6;background:#f8f4ed;border-radius:12px;line-height:1.55}
+.total{font-size:35px;font-weight:800;color:#654631;margin:8px 0 14px}
+.row{padding:7px 0;border-bottom:1px solid #e5ded4}
+.row:last-child{border-bottom:0}
+.note{font-size:13px;color:#696158;margin-top:17px;line-height:1.45}
+.badge{display:inline-block;background:#e7f3e8;color:#24652a;padding:5px 9px;border-radius:999px;font-size:13px;font-weight:700}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>Kalkulačka palubek</h1>
+<p>Vyberte konkrétní sortiment a zadejte množství v m². Cena se automaticky upraví podle množství.</p>
+</header>
+
+<section>
+<form id="calc">
+<label for="product">Sortiment</label>
+<select id="product" required>
+<option value="">— Vyberte palubku —</option>
+
+<optgroup label="Obkladové palubky – smrk">
+<option value="klasik / tatran|A/B|12,5 × 96 mm|3; 4; 5 m|284|273|264">Klasik / Tatran – A/B – 12,5 × 96 mm – 3, 4, 5 m</option>
+<option value="klasik|A/C|12,5 × 96 mm|4; 5 m|242|232|225">Klasik – A/C – 12,5 × 96 mm – 4, 5 m</option>
+<option value="klasik|B/C|12,5 × 96 mm|4; 5 m|197|189|183">Klasik – B/C – 12,5 × 96 mm – 4, 5 m</option>
+<option value="klasik / tatran|A/B|15 × 121 mm|3; 4; 5 m|351|337|326">Klasik / Tatran – A/B – 15 × 121 mm – 3, 4, 5 m</option>
+<option value="klasik|B/C|15 × 121 mm|4; 5 m|221|212|206">Klasik – B/C – 15 × 121 mm – 4, 5 m</option>
+<option value="klasik|A/B|19 × 121 / 146 mm|3; 4; 5 m|418|401|389">Klasik – A/B – 19 × 121 / 146 mm – 3, 4, 5 m</option>
+<option value="klasik|B/C|19 × 121 / 146 mm|4; 5 m|276|265|257">Klasik – B/C – 19 × 121 / 146 mm – 4, 5 m</option>
+<option value="klasik|A/C|24 × 146 mm|4 m|472|453|439">Klasik – A/C – 24 × 146 mm – 4 m</option>
+</optgroup>
+
+<optgroup label="Podlahové palubky – smrk">
+<option value="podlaha|A/B|19 × 121 mm|4; 5 m|422|405|392">Podlaha – A/B – 19 × 121 mm – 4, 5 m</option>
+<option value="podlaha|B/C|19 × 121 mm|4; 5 m|270|259|251">Podlaha – B/C – 19 × 121 mm – 4, 5 m</option>
+<option value="podlaha|A/B|24 × 146 mm|4; 5 m|528|507|491">Podlaha – A/B – 24 × 146 mm – 4, 5 m</option>
+<option value="podlaha|B/C|24 × 146 mm|4; 5 m|345|331|321">Podlaha – B/C – 24 × 146 mm – 4, 5 m</option>
+<option value="podlaha|A/B|28 × 146 mm|4; 5 m|617|592|574">Podlaha – A/B – 28 × 146 mm – 4, 5 m</option>
+<option value="podlaha|B/C|28 × 146 mm|4; 5 m|399|383|371">Podlaha – B/C – 28 × 146 mm – 4, 5 m</option>
+<option value="podlaha + klasik|A/B|40 × 146 mm|4; 5 m|946|908|880">Podlaha + Klasik – A/B – 40 × 146 mm – 4, 5 m</option>
+<option value="podlaha + klasik|B/C|40 × 146 mm|4; 5 m|556|534|517">Podlaha + Klasik – B/C – 40 × 146 mm – 4, 5 m</option>
+</optgroup>
+
+<optgroup label="Hoblovaná prkna – smrk">
+<option value="čtyřstranně hoblované|A/C|19 × 110 / 146 mm|3; 4 m|377|362|351">Čtyřstranně hoblované – A/C – 19 × 110 / 146 mm – 3, 4 m</option>
+<option value="čtyřstranně hoblované|A/C|24 × 146 mm|4 m|472|453|439">Čtyřstranně hoblované – A/C – 24 × 146 mm – 4 m</option>
+</optgroup>
+</select>
+
+<label for="area">Množství v m²</label>
+<input id="area" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="Například 30" required>
+
+<button type="submit">Spočítat cenu</button>
+</form>
+
+<div id="result">Vyberte sortiment a zadejte množství.</div>
+
+<div class="note">
+Ceny jsou včetně 21 % DPH. Do 50 m² platí základní cena, nad 50 m² druhá cena a nad 100 m² třetí cena. Cena palubek je účtována za m² včetně pera.
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+  var form=document.getElementById('calc');
+  var product=document.getElementById('product');
+  var area=document.getElementById('area');
+  var result=document.getElementById('result');
+
+  function money(v){
+    return Number(v).toLocaleString('cs-CZ',{
+      style:'currency',
+      currency:'CZK',
+      minimumFractionDigits:2,
+      maximumFractionDigits:2
+    });
+  }
+
+  function number(v){
+    return Number(v).toLocaleString('cs-CZ',{
+      minimumFractionDigits:2,
+      maximumFractionDigits:2
+    });
+  }
+
+  function calculate(e){
+    if(e){e.preventDefault();}
+
+    if(!product.value){
+      result.innerHTML='Vyberte prosím konkrétní sortiment.';
+      return false;
+    }
+
+    var qty=parseFloat(String(area.value).replace(',','.'));
+    if(!isFinite(qty)||qty<=0){
+      result.innerHTML='Zadejte prosím platné množství větší než 0 m².';
+      return false;
+    }
+
+    var d=product.value.split('|');
+    var profile=d[0], quality=d[1], size=d[2], length=d[3];
+    var p1=parseFloat(d[4]), p2=parseFloat(d[5]), p3=parseFloat(d[6]);
+
+    var unit=p1, tier='do 50 m²';
+    if(qty>100){unit=p3;tier='nad 100 m²';}
+    else if(qty>50){unit=p2;tier='nad 50 m²';}
+
+    var total=qty*unit;
+
+    result.innerHTML=
+      '<span class="badge">'+tier+'</span>'+
+      '<div class="total">'+money(total)+'</div>'+
+      '<div class="row"><strong>Profil:</strong> '+profile+'</div>'+
+      '<div class="row"><strong>Kvalita:</strong> '+quality+'</div>'+
+      '<div class="row"><strong>Rozměr:</strong> '+size+'</div>'+
+      '<div class="row"><strong>Dostupné délky:</strong> '+length+'</div>'+
+      '<div class="row"><strong>Množství:</strong> '+number(qty)+' m²</div>'+
+      '<div class="row"><strong>Cena za 1 m²:</strong> '+money(unit)+'</div>'+
+      '<div class="row"><strong>Celková cena:</strong> '+money(total)+'</div>';
+
+    return false;
+  }
+
+  form.addEventListener('submit',calculate);
+})();
+</script>
+</body>
+</html>
