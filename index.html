@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSB kalkulačka 2026</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f3efe8;margin:0;padding:16px;color:#26221e}
+main{max-width:700px;margin:auto;background:#fff;padding:22px;border-radius:16px;box-shadow:0 8px 25px #0002}
+h1{margin-top:0;color:#654631}
+label{display:block;font-weight:bold;margin:18px 0 7px}
+select,input,button{width:100%;font-size:18px;padding:13px;border-radius:10px;box-sizing:border-box}
+select,input{border:1px solid #bbb;background:white}
+button{margin-top:18px;border:0;background:#654631;color:white;font-weight:bold}
+#vysledek{margin-top:20px;padding:18px;background:#f7f2ea;border-radius:10px;min-height:60px;line-height:1.55}
+.cena{font-size:34px;font-weight:bold;color:#654631;margin:8px 0}
+.radek{border-bottom:1px solid #ddd;padding:6px 0}
+.poznamka{font-size:13px;color:#666;margin-top:16px}
+</style>
+</head>
+<body>
+<main>
+<h1>Kalkulačka OSB desek</h1>
+
+<form id="kalkulacka">
+<label for="sortiment">Rozměr a provedení</label>
+<select id="sortiment" required>
+<option value="">Vyberte rozměr</option>
+<option value="OSB 3 N|10 x 1250 x 2500|151|145|139|3.125|72">OSB 3 N – 10 × 1250 × 2500 mm</option>
+<option value="OSB 3 N|12 x 1250 x 2500|172|165|158|3.125|55">OSB 3 N – 12 × 1250 × 2500 mm</option>
+<option value="OSB 3 N|15 x 1250 x 2500|210|202|193|3.125|44">OSB 3 N – 15 × 1250 × 2500 mm</option>
+<option value="OSB 3 N|18 x 1250 x 2500|255|245|235|3.125|39">OSB 3 N – 18 × 1250 × 2500 mm</option>
+<option value="OSB 3 N|22 x 1250 x 2500|316|303|291|3.125|32">OSB 3 N – 22 × 1250 × 2500 mm</option>
+<option value="OSB 3 N|25 x 1250 x 2500|351|337|323|3.125|28">OSB 3 N – 25 × 1250 × 2500 mm</option>
+<option value="OSB 3 N - 4PD|12 x 675 x 2500|179|172|165|1.6875|80">OSB 3 N – 4PD – 12 × 675 × 2500 mm</option>
+<option value="OSB 3 N - 4PD|15 x 675 x 2500|226|217|208|1.6875|64">OSB 3 N – 4PD – 15 × 675 × 2500 mm</option>
+<option value="OSB 3 N - 4PD|18 x 675 x 2500|289|277|266|1.6875|54">OSB 3 N – 4PD – 18 × 675 × 2500 mm</option>
+<option value="OSB 3 N - 4PD|22 x 675 x 2500|329|316|303|1.6875|44">OSB 3 N – 4PD – 22 × 675 × 2500 mm</option>
+<option value="OSB 3 N - 4PD|25 x 675 x 2500|373|358|343|1.6875|39">OSB 3 N – 4PD – 25 × 675 × 2500 mm</option>
+</select>
+
+<label for="m2">Množství v m²</label>
+<input id="m2" type="number" min="0.01" step="0.01" placeholder="Například 30" required>
+
+<button type="submit">Spočítat cenu</button>
+</form>
+
+<div id="vysledek">Vyberte rozměr a zadejte množství.</div>
+<div class="poznamka">Do 50 m² platí základní cena, při množství nad 50 m² druhá cena a při množství nad 100 m² třetí cena. Ceny jsou včetně DPH.</div>
+</main>
+
+<script>
+(function(){
+  var formular=document.getElementById('kalkulacka');
+  var sortiment=document.getElementById('sortiment');
+  var m2=document.getElementById('m2');
+  var vysledek=document.getElementById('vysledek');
+
+  function penize(cislo){
+    return cislo.toFixed(2).replace('.', ',')+' Kč';
+  }
+  function cislo(cislo, desetinna){
+    return cislo.toFixed(desetinna).replace('.', ',');
+  }
+
+  formular.onsubmit=function(e){
+    e.preventDefault();
+
+    if(sortiment.value===''){
+      vysledek.innerHTML='Vyberte prosím rozměr desky.';
+      return false;
+    }
+
+    var mnozstvi=parseFloat(m2.value);
+    if(isNaN(mnozstvi)||mnozstvi<=0){
+      vysledek.innerHTML='Zadejte platné množství v m².';
+      return false;
+    }
+
+    var d=sortiment.value.split('|');
+    var provedeni=d[0];
+    var rozmer=d[1];
+    var cenaDo=parseFloat(d[2]);
+    var cena50=parseFloat(d[3]);
+    var cena100=parseFloat(d[4]);
+    var plochaDesky=parseFloat(d[5]);
+    var paleta=parseInt(d[6],10);
+
+    var cenaZaM2=cenaDo;
+    var hranice='do 50 m²';
+
+    if(mnozstvi>100){
+      cenaZaM2=cena100;
+      hranice='nad 100 m²';
+    }else if(mnozstvi>50){
+      cenaZaM2=cena50;
+      hranice='nad 50 m²';
+    }
+
+    var celkem=mnozstvi*cenaZaM2;
+    var pocetDesek=Math.ceil(mnozstvi/plochaDesky);
+    var skutecnaPlocha=pocetDesek*plochaDesky;
+    var cenaCelychDesek=skutecnaPlocha*cenaZaM2;
+
+    vysledek.innerHTML=
+      '<strong>'+provedeni+' – '+rozmer+' mm</strong>'+
+      '<div class="cena">'+penize(celkem)+'</div>'+
+      '<div class="radek"><strong>Cena za m²:</strong> '+penize(cenaZaM2)+'</div>'+
+      '<div class="radek"><strong>Cenová hranice:</strong> '+hranice+'</div>'+
+      '<div class="radek"><strong>Zadané množství:</strong> '+cislo(mnozstvi,2)+' m²</div>'+
+      '<div class="radek"><strong>Orientační počet desek:</strong> '+pocetDesek+' ks</div>'+
+      '<div class="radek"><strong>Plocha celých desek:</strong> '+cislo(skutecnaPlocha,4)+' m²</div>'+
+      '<div class="radek"><strong>Cena za celé desky:</strong> '+penize(cenaCelychDesek)+'</div>'+
+      '<div class="radek"><strong>Kusů na paletě:</strong> '+paleta+' ks</div>';
+
+    return false;
+  };
+})();
+</script>
+</body>
+</html>
