@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f4d2e" />
+  <title>Pila Opluštil – interní kalkulačka</title>
+  <style>
+    :root{
+      --bg:#f4f6f3;
+      --card:#ffffff;
+      --text:#1d241f;
+      --muted:#687168;
+      --primary:#1f6b3a;
+      --primary-dark:#174d2c;
+      --accent:#d8a729;
+      --border:#dfe5df;
+      --danger:#a83b2f;
+      --shadow:0 8px 24px rgba(20,45,30,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    button,input,select{font:inherit}
+    .app{max-width:820px;margin:0 auto;min-height:100vh;padding-bottom:90px}
+    header{
+      position:sticky;top:0;z-index:10;
+      background:rgba(244,246,243,.94);
+      backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--border);
+      padding:14px 16px;
+    }
+    .header-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{font-size:21px;margin:0}
+    .subtitle{font-size:12px;color:var(--muted);margin-top:3px}
+    .icon-btn{
+      border:0;background:var(--card);border:1px solid var(--border);
+      width:44px;height:44px;border-radius:14px;cursor:pointer;
+      box-shadow:var(--shadow);font-size:20px
+    }
+    main{padding:16px}
+    .screen{display:none}
+    .screen.active{display:block}
+    .hero{
+      background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+      color:white;border-radius:24px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px
+    }
+    .hero h2{margin:0 0 6px;font-size:25px}
+    .hero p{margin:0;opacity:.88}
+    .grid{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px
+    }
+    .category{
+      min-height:112px;border:1px solid var(--border);background:var(--card);
+      border-radius:var(--radius);padding:16px;text-align:left;cursor:pointer;
+      box-shadow:var(--shadow);transition:.15s transform,.15s border-color
+    }
+    .category:active{transform:scale(.98)}
+    .category .emoji{font-size:29px;display:block;margin-bottom:10px}
+    .category strong{display:block;font-size:17px}
+    .category span{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+    .card{
+      background:var(--card);border:1px solid var(--border);
+      border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:14px
+    }
+    .card h3{margin:0 0 14px;font-size:18px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .field{margin-bottom:12px}
+    label{display:block;font-size:13px;font-weight:700;margin:0 0 6px}
+    input,select{
+      width:100%;min-height:48px;border-radius:13px;border:1px solid #cfd8cf;
+      background:#fff;padding:10px 12px;color:var(--text)
+    }
+    input:focus,select:focus{outline:2px solid rgba(31,107,58,.2);border-color:var(--primary)}
+    .primary-btn,.secondary-btn,.danger-btn{
+      width:100%;min-height:50px;border:0;border-radius:14px;font-weight:800;cursor:pointer
+    }
+    .primary-btn{background:var(--primary);color:white}
+    .secondary-btn{background:#eef2ee;color:var(--text);border:1px solid var(--border)}
+    .danger-btn{background:#fff0ee;color:var(--danger);border:1px solid #f0c7c2}
+    .result{
+      background:#edf7ef;border:1px solid #bcdac4;border-radius:16px;padding:16px;margin-top:14px
+    }
+    .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .result-item{background:white;border-radius:12px;padding:12px}
+    .result-item small{display:block;color:var(--muted);font-size:12px}
+    .result-item strong{display:block;margin-top:4px;font-size:18px}
+    .big-result{grid-column:1/-1;background:var(--primary);color:white}
+    .big-result small{color:rgba(255,255,255,.78)}
+    .back{
+      display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;
+      color:var(--primary);font-weight:800;padding:4px 0 12px;cursor:pointer
+    }
+    .notice{font-size:12px;color:var(--muted);line-height:1.45}
+    .settings-section{margin-bottom:18px}
+    .price-row{
+      display:grid;grid-template-columns:1fr 140px;gap:10px;align-items:center;
+      padding:10px 0;border-bottom:1px solid var(--border)
+    }
+    .price-row:last-child{border-bottom:0}
+    .price-row input{min-height:42px}
+    .pill{
+      display:inline-block;background:#eef2ee;border-radius:999px;padding:4px 8px;
+      font-size:11px;color:var(--muted);margin-left:6px
+    }
+    .footer-note{font-size:11px;color:var(--muted);text-align:center;margin-top:18px}
+    .item-list{display:grid;gap:10px;margin-top:14px}
+    .item-row{border:1px solid var(--border);border-radius:14px;padding:12px;background:#fafcf9}
+    .item-row-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .item-row strong{display:block}
+    .item-row small{display:block;color:var(--muted);margin-top:4px;line-height:1.4}
+    .mini-btn{border:1px solid #f0c7c2;background:#fff0ee;color:var(--danger);border-radius:10px;padding:7px 10px;font-weight:700;cursor:pointer}
+    @media (max-width:560px){
+      .grid{grid-template-columns:1fr 1fr}
+      .row{grid-template-columns:1fr}
+      .result-grid{grid-template-columns:1fr 1fr}
+      .price-row{grid-template-columns:1fr 110px}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-row">
+      <div>
+        <h1>Pila Opluštil</h1>
+        <div class="subtitle">Interní prodejní kalkulačka</div>
+      </div>
+      <button class="icon-btn" onclick="showScreen('settings')" aria-label="Nastavení">⚙️</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="screen active">
+      <div class="hero">
+        <h2>Rychlá kalkulace</h2>
+        <p>Vyber sortiment a během chvíle spočítej množství i cenu.</p>
+      </div>
+      <div class="grid">
+        <button class="category" onclick="showScreen('rezivo')"><span class="emoji">🪵</span><strong>Řezivo</strong><span>m³ podle rozměrů a kusů</span></button>
+        <button class="category" onclick="showScreen('desky')"><span class="emoji">🪚</span><strong>Desky</strong><span>výpočet z m² nebo kusů</span></button>
+        <button class="category" onclick="showScreen('osb')"><span class="emoji">🟫</span><strong>OSB</strong><span>množstevní ceny</span></button>
+        <button class="category" onclick="showScreen('palubky')"><span class="emoji">🏠</span><strong>Palubky</strong><span>obkladové a podlahové</span></button>
+        <button class="category" onclick="showScreen('plotovky')"><span class="emoji">🪧</span><strong>Plotovky</strong><span>hoblované, frézované, balkonovky</span></button>
+        <button class="category" onclick="showScreen('kvh')"><span class="emoji">📏</span><strong>KVH</strong><span>skladové rozměry</span></button>
+      </div>
+      <div class="footer-note">Ceny jsou uloženy pouze v tomto zařízení.</div>
+    </section>
+
+    <section id="rezivo" class="screen">
+      <button class="back" onclick="showScreen('home')">← Zpět</button>
+      <div class="card">
+        <h3>Řezivo</h3>
+        <div class="field"><label>Dřevina</label><select id="rezivoDrevina"></select></div>
+        <div class="row">
+          <div class="field"><label>Šířka (cm)</label><input id="rezivoSirka" type="number" step="0.1" inputmode="decimal" placeholder="např. 14"></div>
+          <div class="field"><label>Výška (cm)</label><input id="rezivoVyska" type="number" step="0.1" inputmode="decimal" placeholder="např. 27"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Délka (m)</label><input id="rezivoDelka" type="number" step="0.1" inputmode="decimal" placeholder="např. 5,2"></div>
+          <div class="field"><label>Počet kusů</label><input id="rezivoKusy" type="number" step="1" inputmode="numeric" placeholder="např. 4"></div>
+        </div>
+        <button class="primary-btn" onclick="addRezivoItem()">+ Přidat prvek</button>
+        <div id="rezivoItems" class="item-list"></div>
+        <div id="rezivoResult"></div>
+        <button id="rezivoClearBtn" class="danger-btn" style="display:none;margin-top:10px" onclick="clearRezivoItems()">Vymazat všechny prvky</button>
+      </div>
+    </section>
+
+    <section id="desky" class="screen">
+      <button class="back" onclick="showScreen('home')">← Zpět</button>
+      <div class="card">
+        <h3>Desky</h3>
+        <div class="field"><label>Tloušťka</label>
+          <select id="deskyTloustka">
+            <option value="25">2,5 cm</option>
+            <option value="32">3,2 cm</option>
+          </select>
+        </div>
+        <div class="field"><label>Šířka desky (cm)</label><input id="deskySirka" type="number" step="0.1" inputmode="decimal" placeholder="např. 15"></div>
+        <div class="field"><label>Způsob zadání</label>
+          <select id="deskyMode" onchange="toggleDeskyMode()">
+            <option value="m2">Zadat celkové m²</option>
+            <option value="kusy">Zadat šířku, délku a počet kusů</option>
+          </select>
+        </div>
+        <div id="deskyM2Block">
+          <div class="field"><label>Celkem m²</label><input id="deskyM2" type="number" step="0.01" inputmode="decimal"></div>
+        </div>
+        <div id="deskyKusyBlock" style="display:none">
+          <div class="field"><label>Délka desky (m)</label><input id="deskyDelka" type="number" step="0.1" inputmode="decimal"></div>
+          <div class="field"><label>Počet kusů</label><input id="deskyKusy" type="number" step="1" inputmode="numeric"></div>
+        </div>
+        <button class="primary-btn" onclick="calcDesky()">Spočítat</button>
+        <div id="deskyResult"></div>
+      </div>
+    </section>
+
+    <section id="osb" class="screen">
+      <button class="back" onclick="showScreen('home')">← Zpět</button>
+      <div class="card">
+        <h3>OSB desky</h3>
+        <div class="field"><label>Provedení a rozměr</label><select id="osbProduct"></select></div>
+        <div class="field"><label>Způsob zadání</label><select id="osbMode" onchange="toggleOsbMode()"><option value="m2">Požadovaná plocha (m²)</option><option value="kusy">Počet kusů</option></select></div>
+        <div id="osbM2Block" class="field"><label>Požadovaná plocha (m²)</label><input id="osbM2" type="number" step="0.01" inputmode="decimal"></div>
+        <div id="osbKusyBlock" class="field" style="display:none"><label>Počet kusů</label><input id="osbKusy" type="number" step="1" inputmode="numeric"></div>
+        <button class="primary-btn" onclick="calcOsb()">Spočítat</button>
+        <div id="osbResult"></div>
+      </div>
+    </section>
+
+    <section id="palubky" class="screen">
+      <button class="back" onclick="showScreen('home')">← Zpět</button>
+      <div class="card">
+        <h3>Palubky</h3>
+        <div class="field"><label>Typ</label><select id="palubkyProduct" onchange="updatePalubkyDimensions()"></select></div>
+        <div class="row">
+          <div class="field"><label>Šířka palubky</label><select id="palubkyWidth"></select></div>
+          <div class="field"><label>Délka palubky</label><select id="palubkyLength"><option value="3">3 m</option><option value="4">4 m</option><option value="5">5 m</option></select></div>
+        </div>
+        <div class="field"><label>Způsob zadání</label><select id="palubkyMode" onchange="togglePalubkyMode()"><option value="m2">Požadovaná plocha (m²)</option><option value="kusy">Počet kusů</option></select></div>
+        <div id="palubkyM2Block" class="field"><label>Požadovaná plocha (m²)</label><input id="palubkyM2" type="number" step="0.01" inputmode="decimal"></div>
+        <div id="palubkyKusyBlock" class="field" style="display:none"><label>Počet kusů</label><input id="palubkyKusy" type="number" step="1" inputmode="numeric"></div>
+        <button class="primary-btn" onclick="calcPalubky()">Spočítat</button>
+        <div id="palubkyResult"></div>
+      </div>
+    </section>
+
+    <section id="plotovky" class="screen">
+      <button class="back" onclick="showScreen('home')">← Zpět</button>
+      <div class="card">
+        <h3>Plotovky</h3>
+        <div class="field"><label>Typ</label>
+          <select id="plotTyp" onchange="togglePlotovky()">
+            <option value="rovna">Rovná</option>
+            <option value="sikma">Šikmá</option>
+            <option value="zakulacena">Zakulacená</option>
+            <option value="balkonovka">Balkonovka 20 × 90 × 1000 mm</option>
+          </select>
+        </div>
+        <div id="plotStandard">
+          <div class="row">
+            <div class="field"><label>Šířka</label><select id="plotSirka"><option value="95">95 mm</option><option value="110">110 mm</option></select></div>
+            <div class="field"><label>Opracování</label><select id="plotOprac"><option value="hoblovana">Hoblovaná</option><option value="frezovana">Frézovaná</option></select></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Délka 1 ks (m)</label><input id="plotDelka" type="number" step="0.01" inputmode="decimal"></div>
+            <div class="field"><label>Počet kusů</label><input id="plotKusy" type="number" step="1" inputmode="numeric"></div>
+          </div>
+        </div>
+        <div id="plotBalkon" style="display:none">
+          <div class="field"><label>Počet kusů</label><input id="balkonKusy" type="number" step="1" inputmode="numeric"></div>
+        </div>
+        <button class="primary-btn" onclick="calcPlotovky()">Spočítat</button>
+        <div id="plotResult"></div>
+      </div>
+    </section>
+
+    <section id="kvh" class="screen">
+      <button class="back" onclick="showScreen('home')">← Zpět</button>
+      <div class="card">
+        <h3>KVH hranoly</h3>
+        <div class="field"><label>Rozměr</label><select id="kvhProduct"></select></div>
+        <div class="field"><label>Počet kusů</label><input id="kvhKusy" type="number" step="1" inputmode="numeric"></div>
+        <button class="primary-btn" onclick="calcKvh()">Spočítat</button>
+        <div id="kvhResult"></div>
+      </div>
+    </section>
+
+    <section id="settings" class="screen">
+      <button class="back" onclick="showScreen('home')">← Zpět</button>
+      <div class="card">
+        <h3>Nastavení cen</h3>
+        <p class="notice">Změny se uloží do tohoto telefonu nebo počítače. Tlačítkem Obnovit lze vrátit původní ceny.</p>
+        <div id="settingsContent"></div>
+        <button class="primary-btn" onclick="saveSettings()">Uložit ceny</button>
+        <div style="height:10px"></div>
+        <button class="danger-btn" onclick="resetSettings()">Obnovit původní ceny</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const DEFAULTS = {
+  vat: 21,
+  rezivo: {
+    smrk: {name:"Smrk", price:10500},
+    modrin: {name:"Modřín", price:12000},
+    jasan: {name:"Jasan", price:13000},
+    dub: {name:"Dub", price:15000}
+  },
+  desky: {
+    "25": {name:"Desky 2,5 cm", priceM3:7000, priceM2:175},
+    "32": {name:"Desky 3,2 cm", priceM3:7500, priceM2:240}
+  },
+  osb: [
+    {id:"osb10",name:"OSB 3 N 10×1250×2500",w:1.25,l:2.5,prices:[151,145,139]},
+    {id:"osb12",name:"OSB 3 N 12×1250×2500",w:1.25,l:2.5,prices:[172,165,158]},
+    {id:"osb15",name:"OSB 3 N 15×1250×2500",w:1.25,l:2.5,prices:[210,202,193]},
+    {id:"osb18",name:"OSB 3 N 18×1250×2500",w:1.25,l:2.5,prices:[255,245,235]},
+    {id:"osb22",name:"OSB 3 N 22×1250×2500",w:1.25,l:2.5,prices:[316,303,291]},
+    {id:"osb25",name:"OSB 3 N 25×1250×2500",w:1.25,l:2.5,prices:[351,337,323]},
+    {id:"osb4pd12",name:"OSB 3 N 4PD 12×675×2500",w:.675,l:2.5,prices:[179,172,165]},
+    {id:"osb4pd15",name:"OSB 3 N 4PD 15×675×2500",w:.675,l:2.5,prices:[226,217,208]},
+    {id:"osb4pd18",name:"OSB 3 N 4PD 18×675×2500",w:.675,l:2.5,prices:[289,277,266]},
+    {id:"osb4pd22",name:"OSB 3 N 4PD 22×675×2500",w:.675,l:2.5,prices:[329,316,303]},
+    {id:"osb4pd25",name:"OSB 3 N 4PD 25×675×2500",w:.675,l:2.5,prices:[373,358,343]}
+  ],
+  palubky: [
+    {id:"p1",name:"Obkladová klasik/tatran A/B 12,5×96 mm",widths:[96],prices:[284,273,264]},
+    {id:"p2",name:"Obkladová klasik A/C 12,5×96 mm",widths:[96],prices:[242,232,225]},
+    {id:"p3",name:"Obkladová klasik B/C 12,5×96 mm",widths:[96],prices:[197,189,183]},
+    {id:"p4",name:"Obkladová klasik/tatran A/B 15×121 mm",widths:[121],prices:[351,337,326]},
+    {id:"p5",name:"Obkladová klasik B/C 15×121 mm",widths:[121],prices:[221,212,206]},
+    {id:"p6",name:"Obkladová klasik A/B 19×121/146 mm",widths:[121,146],prices:[418,401,389]},
+    {id:"p7",name:"Obkladová klasik B/C 19×121/146 mm",widths:[121,146],prices:[276,265,257]},
+    {id:"p8",name:"Obkladová klasik A/C 24×146 mm",widths:[146],prices:[472,453,439]},
+    {id:"p9",name:"Podlahová A/B 19×121 mm",widths:[121],prices:[422,405,392]},
+    {id:"p10",name:"Podlahová B/C 19×121 mm",widths:[121],prices:[270,259,251]},
+    {id:"p11",name:"Podlahová A/B 24×146 mm",widths:[146],prices:[528,507,491]},
+    {id:"p12",name:"Podlahová B/C 24×146 mm",widths:[146],prices:[345,331,321]},
+    {id:"p13",name:"Podlahová A/B 28×146 mm",widths:[146],prices:[617,592,574]},
+    {id:"p14",name:"Podlahová B/C 28×146 mm",widths:[146],prices:[399,383,371]},
+    {id:"p15",name:"Podlahová + klasik A/B 40×146 mm",widths:[146],prices:[946,908,880]},
+    {id:"p16",name:"Podlahová + klasik B/C 40×146 mm",widths:[146],prices:[556,534,517]},
+    {id:"p17",name:"Čtyřstranně hoblovaná A/C 19×110/146 mm",widths:[110,146],prices:[377,362,351]},
+    {id:"p18",name:"Čtyřstranně hoblovaná A/C 24×146 mm",widths:[146],prices:[472,453,439]}
+  ],
+  plotovky: {
+    rovna: {95:{hoblovana:40,frezovana:46},110:{hoblovana:50,frezovana:56}},
+    sikma: {95:{hoblovana:43,frezovana:50},110:{hoblovana:54,frezovana:60}},
+    zakulacena: {95:{hoblovana:46,frezovana:53},110:{hoblovana:56,frezovana:64}},
+    balkonovka: 58
+  },
+  kvh: [
+    {id:"k1",name:"4×6 cm / délka 4–5 m",a:.04,b:.06,l:4.5,price:18750},
+    {id:"k2",name:"6×12 cm / délka 5 m",a:.06,b:.12,l:5,price:17570},
+    {id:"k3",name:"10×10 cm / délka 5 m",a:.10,b:.10,l:5,price:17950},
+    {id:"k4",name:"12×12 cm / délka 5 m",a:.12,b:.12,l:5,price:18755},
+    {id:"k5",name:"14×14 cm / délka 5 m",a:.14,b:.14,l:5,price:19400},
+    {id:"k6",name:"8×16 cm / délka 5 m",a:.08,b:.16,l:5,price:17600},
+    {id:"k7",name:"6×16 cm / délka 5 m",a:.06,b:.16,l:5,price:17300},
+    {id:"k8",name:"10×16 cm / délka 5 m",a:.10,b:.16,l:5,price:19260}
+  ]
+};
+
+let data = JSON.parse(localStorage.getItem("pilaCalcData") || "null") || structuredClone(DEFAULTS);
+let rezivoItems = JSON.parse(localStorage.getItem("pilaRezivoItems") || "[]");
+
+const money = n => new Intl.NumberFormat("cs-CZ",{style:"currency",currency:"CZK",maximumFractionDigits:0}).format(n || 0);
+const num = (n,d=3) => new Intl.NumberFormat("cs-CZ",{maximumFractionDigits:d}).format(n || 0);
+const value = id => parseFloat((document.getElementById(id).value || "").replace(",","."));
+const vatBase = gross => gross / (1 + data.vat/100);
+const gross = net => net * (1 + data.vat/100);
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo({top:0,behavior:"smooth"});
+  if(id==="settings") renderSettings();
+}
+
+function tierIndex(m2){ return m2>100 ? 2 : m2>50 ? 1 : 0; }
+
+function resultHtml(items,bigLabel,bigValue){
+  return `<div class="result"><div class="result-grid">
+    ${items.map(i=>`<div class="result-item"><small>${i[0]}</small><strong>${i[1]}</strong></div>`).join("")}
+    <div class="result-item big-result"><small>${bigLabel}</small><strong>${bigValue}</strong></div>
+  </div></div>`;
+}
+
+function init(){
+  document.getElementById("rezivoDrevina").innerHTML = Object.entries(data.rezivo).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join("");
+  document.getElementById("osbProduct").innerHTML = data.osb.map(x=>`<option value="${x.id}">${x.name}</option>`).join("");
+  document.getElementById("palubkyProduct").innerHTML = data.palubky.map(x=>`<option value="${x.id}">${x.name}</option>`).join("");
+  document.getElementById("kvhProduct").innerHTML = data.kvh.map(x=>`<option value="${x.id}">${x.name}</option>`).join("");
+  updatePalubkyDimensions();
+  renderRezivoItems();
+}
+
+function addRezivoItem(){
+  const key=document.getElementById("rezivoDrevina").value;
+  const s=value("rezivoSirka"),v=value("rezivoVyska"),l=value("rezivoDelka"),k=value("rezivoKusy");
+  if(!s||!v||!l||!k) return alert("Vyplň všechny údaje.");
+  const m3=(s/100)*(v/100)*l*k;
+  const net=m3*data.rezivo[key].price;
+  rezivoItems.push({id:Date.now(),key,s,v,l,k,m3,net});
+  localStorage.setItem("pilaRezivoItems",JSON.stringify(rezivoItems));
+  ["rezivoSirka","rezivoVyska","rezivoDelka","rezivoKusy"].forEach(id=>document.getElementById(id).value="");
+  renderRezivoItems();
+}
+function removeRezivoItem(id){
+  rezivoItems=rezivoItems.filter(x=>x.id!==id);
+  localStorage.setItem("pilaRezivoItems",JSON.stringify(rezivoItems));
+  renderRezivoItems();
+}
+function clearRezivoItems(){
+  if(!confirm("Opravdu vymazat všechny přidané prvky?")) return;
+  rezivoItems=[]; localStorage.removeItem("pilaRezivoItems"); renderRezivoItems();
+}
+function renderRezivoItems(){
+  const box=document.getElementById("rezivoItems");
+  const result=document.getElementById("rezivoResult");
+  const clear=document.getElementById("rezivoClearBtn");
+  if(!box) return;
+  if(!rezivoItems.length){box.innerHTML="";result.innerHTML="";clear.style.display="none";return;}
+  box.innerHTML=rezivoItems.map((x,i)=>`<div class="item-row"><div class="item-row-top"><div><strong>${i+1}. ${data.rezivo[x.key]?.name||x.key} – ${num(x.m3)} m³</strong><small>${x.s} × ${x.v} cm, délka ${x.l} m, ${x.k} ks<br>Cena bez DPH: ${money(x.net)}</small></div><button class="mini-btn" onclick="removeRezivoItem(${x.id})">Smazat</button></div></div>`).join("");
+  const totalM3=rezivoItems.reduce((a,x)=>a+x.m3,0);
+  const totalNet=rezivoItems.reduce((a,x)=>a+x.net,0);
+  result.innerHTML=resultHtml([["Počet různých prvků",rezivoItems.length+""],["Celková kubatura",num(totalM3)+" m³"],["Cena bez DPH",money(totalNet)],["DPH "+data.vat+" %",money(gross(totalNet)-totalNet)]],"Celková cena s DPH",money(gross(totalNet)));
+  clear.style.display="block";
+}
+
+function toggleDeskyMode(){
+  const m=document.getElementById("deskyMode").value;
+  document.getElementById("deskyM2Block").style.display=m==="m2"?"block":"none";
+  document.getElementById("deskyKusyBlock").style.display=m==="kusy"?"block":"none";
+}
+function calcDesky(){
+  const t=document.getElementById("deskyTloustka").value;
+  const mode=document.getElementById("deskyMode").value;
+  const s=value("deskySirka");
+  if(!s) return alert("Zadej šířku desky.");
+  let m2=0,kusyText="";
+  if(mode==="m2"){m2=value("deskyM2");}
+  else{
+    const l=value("deskyDelka"),k=value("deskyKusy");
+    if(!s||!l||!k) return alert("Vyplň šířku, délku a počet kusů.");
+    m2=(s/100)*l*k; kusyText=`${k} ks`;
+  }
+  if(!m2) return alert("Zadej množství.");
+  const net=m2*data.desky[t].priceM2;
+  const m3=m2*(parseInt(t)/1000);
+  document.getElementById("deskyResult").innerHTML=resultHtml([
+    ["Plocha",num(m2,2)+" m²"],
+    ["Šířka desky",num(s,1)+" cm"],
+    ["Objem",num(m3)+" m³"],
+    ["Cena bez DPH",money(net)],
+    ["Jednotková cena",money(data.desky[t].priceM2)+"/m²"]
+  ],"Cena s DPH",money(gross(net)));
+}
+
+function toggleOsbMode(){
+  const m=document.getElementById("osbMode").value;
+  document.getElementById("osbM2Block").style.display=m==="m2"?"block":"none";
+  document.getElementById("osbKusyBlock").style.display=m==="kusy"?"block":"none";
+}
+function calcOsb(){
+  const p=data.osb.find(x=>x.id===document.getElementById("osbProduct").value);
+  const mode=document.getElementById("osbMode").value;
+  const area=p.w*p.l;
+  let pieces,requested,realArea;
+  if(mode==="kusy"){pieces=value("osbKusy"); if(!pieces) return alert("Zadej počet kusů."); requested=pieces*area; realArea=requested;}
+  else {requested=value("osbM2"); if(!requested) return alert("Zadej požadovanou plochu."); pieces=Math.ceil(requested/area); realArea=pieces*area;}
+  const priceGross=p.prices[tierIndex(realArea)];
+  const grossTotal=realArea*priceGross;
+  const net=vatBase(grossTotal);
+  document.getElementById("osbResult").innerHTML=resultHtml([["Plocha 1 kusu",num(area,3)+" m²"],["Počet kusů",pieces+" ks"],["Skutečná plocha",num(realArea,2)+" m²"],["Cena bez DPH",money(net)],["Cena za m² s DPH",money(priceGross)]],"Cena s DPH",money(grossTotal));
+}
+
+function updatePalubkyDimensions(){
+  const p=data.palubky.find(x=>x.id===document.getElementById("palubkyProduct").value);
+  if(!p) return;
+  document.getElementById("palubkyWidth").innerHTML=(p.widths||[146]).map(w=>`<option value="${w}">${w} mm</option>`).join("");
+}
+function togglePalubkyMode(){
+  const m=document.getElementById("palubkyMode").value;
+  document.getElementById("palubkyM2Block").style.display=m==="m2"?"block":"none";
+  document.getElementById("palubkyKusyBlock").style.display=m==="kusy"?"block":"none";
+}
+function calcPalubky(){
+  const p=data.palubky.find(x=>x.id===document.getElementById("palubkyProduct").value);
+  const width=parseFloat(document.getElementById("palubkyWidth").value)/1000;
+  const length=parseFloat(document.getElementById("palubkyLength").value);
+  const areaOne=width*length;
+  const mode=document.getElementById("palubkyMode").value;
+  let pieces,m2;
+  if(mode==="kusy"){pieces=value("palubkyKusy"); if(!pieces) return alert("Zadej počet kusů."); m2=pieces*areaOne;}
+  else {const requested=value("palubkyM2"); if(!requested) return alert("Zadej počet m²."); pieces=Math.ceil(requested/areaOne); m2=pieces*areaOne;}
+  const priceGross=p.prices[tierIndex(m2)];
+  const grossTotal=m2*priceGross;
+  const net=vatBase(grossTotal);
+  document.getElementById("palubkyResult").innerHTML=resultHtml([["Plocha 1 kusu",num(areaOne,3)+" m²"],["Počet kusů",pieces+" ks"],["Skutečná plocha",num(m2,2)+" m²"],["Množstevní pásmo",m2>100?"nad 100 m²":m2>50?"nad 50 m²":"do 50 m²"],["Cena bez DPH",money(net)],["Cena za m² s DPH",money(priceGross)]],"Cena s DPH",money(grossTotal));
+}
+
+function togglePlotovky(){
+  const b=document.getElementById("plotTyp").value==="balkonovka";
+  document.getElementById("plotStandard").style.display=b?"none":"block";
+  document.getElementById("plotBalkon").style.display=b?"block":"none";
+}
+function calcPlotovky(){
+  const typ=document.getElementById("plotTyp").value;
+  if(typ==="balkonovka"){
+    const k=value("balkonKusy"); if(!k) return alert("Zadej počet kusů.");
+    const net=k*data.plotovky.balkonovka;
+    document.getElementById("plotResult").innerHTML=resultHtml([
+      ["Počet",k+" ks"],["Cena za kus bez DPH",money(data.plotovky.balkonovka)],
+      ["Cena bez DPH",money(net)],["DPH "+data.vat+" %",money(gross(net)-net)]
+    ],"Cena s DPH",money(gross(net))); return;
+  }
+  const width=document.getElementById("plotSirka").value;
+  const finish=document.getElementById("plotOprac").value;
+  const l=value("plotDelka"),k=value("plotKusy");
+  if(!l||!k) return alert("Zadej délku a počet kusů.");
+  const bm=l*k;
+  const rate=data.plotovky[typ][width][finish];
+  const net=bm*rate;
+  document.getElementById("plotResult").innerHTML=resultHtml([
+    ["Celkem běžných metrů",num(bm,2)+" bm"],
+    ["Cena za bm bez DPH",money(rate)],
+    ["Cena bez DPH",money(net)],
+    ["DPH "+data.vat+" %",money(gross(net)-net)]
+  ],"Cena s DPH",money(gross(net)));
+}
+
+function calcKvh(){
+  const p=data.kvh.find(x=>x.id===document.getElementById("kvhProduct").value);
+  const k=value("kvhKusy"); if(!k) return alert("Zadej počet kusů.");
+  const m3=p.a*p.b*p.l*k;
+  const grossTotal=m3*p.price;
+  const net=vatBase(grossTotal);
+  document.getElementById("kvhResult").innerHTML=resultHtml([
+    ["Objem",num(m3)+" m³"],["Cena za m³ s DPH",money(p.price)],
+    ["Cena bez DPH",money(net)],["Počet",k+" ks"]
+  ],"Cena s DPH",money(grossTotal));
+}
+
+function renderSettings(){
+  let html=`<div class="settings-section"><h3>Řezivo <span class="pill">Kč/m³ bez DPH</span></h3>`;
+  for(const [k,v] of Object.entries(data.rezivo)) html+=`<div class="price-row"><span>${v.name}</span><input data-path="rezivo.${k}.price" type="number" value="${v.price}"></div>`;
+  html+=`</div><div class="settings-section"><h3>Desky <span class="pill">Kč/m² bez DPH</span></h3>`;
+  for(const [k,v] of Object.entries(data.desky)) html+=`<div class="price-row"><span>${v.name}</span><input data-path="desky.${k}.priceM2" type="number" value="${v.priceM2}"></div>`;
+  html+=`</div><div class="settings-section"><h3>Plotovky <span class="pill">Kč/bm bez DPH</span></h3>`;
+  ["rovna","sikma","zakulacena"].forEach(t=>{
+    [95,110].forEach(w=>{
+      ["hoblovana","frezovana"].forEach(f=>{
+        html+=`<div class="price-row"><span>${t} ${w} mm ${f}</span><input data-path="plotovky.${t}.${w}.${f}" type="number" value="${data.plotovky[t][w][f]}"></div>`;
+      });
+    });
+  });
+  html+=`<div class="price-row"><span>Balkonovka / ks</span><input data-path="plotovky.balkonovka" type="number" value="${data.plotovky.balkonovka}"></div>`;
+  html+=`</div><div class="settings-section"><h3>DPH</h3><div class="price-row"><span>Sazba DPH (%)</span><input data-path="vat" type="number" value="${data.vat}"></div></div>`;
+  document.getElementById("settingsContent").innerHTML=html;
+}
+function setPath(obj,path,val){
+  const parts=path.split(".");
+  let cur=obj;
+  parts.slice(0,-1).forEach(p=>cur=cur[p]);
+  cur[parts.at(-1)]=val;
+}
+function saveSettings(){
+  document.querySelectorAll("[data-path]").forEach(inp=>setPath(data,inp.dataset.path,parseFloat(inp.value)||0));
+  localStorage.setItem("pilaCalcData",JSON.stringify(data));
+  init(); alert("Ceny byly uloženy.");
+}
+function resetSettings(){
+  if(!confirm("Opravdu obnovit původní ceny?")) return;
+  data=structuredClone(DEFAULTS);
+  localStorage.setItem("pilaCalcData",JSON.stringify(data));
+  init(); renderSettings(); alert("Původní ceny byly obnoveny.");
+}
+
+init();
+</script>
+</body>
+</html>
