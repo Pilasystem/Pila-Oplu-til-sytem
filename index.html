@@ -1,11 +1,11 @@
-<!-- Pila Assistant 2.3 -->
+<!-- Pila Assistant 2.4 -->
 <!DOCTYPE html>
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1f1f21" />
-  <title>Pila Opluštil – kalkulačka 2.3</title>
+  <title>Pila Opluštil – kalkulačka 2.4</title>
   <style>
     :root{
       --bg:#f4f6f3;
@@ -466,10 +466,11 @@
       <div class="card">
         <h3>Košík zakázky</h3>
         <div class="cart-controls">
-          <label><input id="cartShowNet" type="checkbox" onchange="setCartShowNet(this.checked)"> Zobrazit ceny bez DPH</label>
-          <label><input id="cartCustomerView" type="checkbox" onchange="setCartCustomerView(this.checked)"> Přehled pro zákazníka</label>
+          <button class="secondary-btn" onclick="setAllGross(true)">Zobrazit s DPH u řeziva, desek a plotovek</button>
+          <button class="secondary-btn" onclick="setAllGross(false)">Skrýt s DPH u řeziva, desek a plotovek</button>
+          <button class="primary-btn" onclick="downloadQuotePdf()">Stáhnout nabídku do PDF (A4)</button>
         </div>
-        <div class="quote-brand">Pila Opluštil · Přehled zakázky</div>
+        <p class="notice">PDF zachová nastavení cen jednotlivých položek. Po stažení ho můžete zákazníkovi odeslat z aplikace Soubory.</p>
         <div id="cartItems" class="item-list"></div>
         <div id="cartResult"></div>
         <button id="cartClearBtn" class="danger-btn" style="display:none;margin-top:10px" onclick="clearCart()">Vymazat celý košík</button>
@@ -636,8 +637,8 @@ function updateHomeCategoryPrices(){
   ["rovna","sikma","zakulacena"].forEach(t=>Object.values(data.plotovky[t]).forEach(w=>Object.values(w).forEach(v=>plotRates.push(v))));
   const minPlot=Math.min(...plotRates);
   const minKvh=Math.min(...data.kvh.map(x=>x.price));
-  set("homePriceHoblovana",`od ${money(minHob)}/m² bez DPH`);
-  set("homePriceTerasy",`od ${money(minTerasy)}/m² bez DPH`);
+  set("homePriceHoblovana",`od ${money(gross(minHob))}/m² s DPH`);
+  set("homePriceTerasy",`od ${money(Math.min(...data.terasy.map(x=>x.grossM2)))}/m² s DPH`);
   set("homePriceOsb",`od ${money(minOsb)}/m² s DPH`);
   set("homePricePalubky",`od ${money(minPalubky)}/m² s DPH`);
   set("homePricePlotovky",`od ${money(minPlot)}/bm bez DPH`);
@@ -648,7 +649,7 @@ function init(){
   initQuickDimensions();
   updateHomeCategoryPrices();
   document.getElementById("rezivoDrevina").innerHTML = Object.entries(data.rezivo).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join("");
-  document.getElementById("hobPrknoProduct").innerHTML = data.hoblovanaPrkna.map(x=>`<option value="${x.id}">${x.name} · ${x.lengths.join("/")} m · ${money(x.priceM2)}/m² bez DPH</option>`).join("");
+  document.getElementById("hobPrknoProduct").innerHTML = data.hoblovanaPrkna.map(x=>`<option value="${x.id}">${x.name} · ${x.lengths.join("/")} m · ${money(gross(x.priceM2))}/m² s DPH</option>`).join("");
   updateHobPrknoLengths();
   document.getElementById("terasyProduct").innerHTML = data.terasy.map(x=>`<option value="${x.id}">${x.name} · ${x.quality} · ${x.thickness} × ${x.width} mm · ${x.length} m</option>`).join("");
   updateTerasyPreview();
@@ -890,7 +891,8 @@ function saveCart(){
   renderCart();
 }
 function addCartItem(item){
-  cartItems.push({id:Date.now()+Math.random(),...item});
+  cartItems.push({id:Date.now()+Math.random(),...item,showGross:pendingGrossOverride??(localStorage.getItem("pilaDefaultShowGross")!=="false")});
+  pendingGrossOverride=null;
   saveCart();
 }
 function removeCartItem(id){
@@ -1031,7 +1033,8 @@ function addKvhItem(){
 const categoryMap={"Řezivo":"rezivo","Desky":"desky","Hoblovaná prkna":"hoblovanaPrkna","Terasová prkna":"terasy","OSB":"osb","Palubky":"palubky","Plotovky":"plotovky","KVH":"kvh"};
 
 function addCartItem(item){
-  cartItems.push({id:Date.now()+Math.random(),...item});
+  cartItems.push({id:Date.now()+Math.random(),...item,showGross:pendingGrossOverride??(localStorage.getItem("pilaDefaultShowGross")!=="false")});
+  pendingGrossOverride=null;
   saveCart();
 }
 function saveCart(){
@@ -1257,8 +1260,9 @@ function itemCard(x,i,showCategory=false){
     <div class="item-card-head"><div class="item-head-left">${showCategory?`<span class="item-category-chip">${st.icon} ${x.category}</span>`:""}<span class="item-number">Položka ${i+1}</span></div>${woodBadge}</div>
     <strong class="item-dimension">${itemDimension(x)}</strong>
     ${highlights?`<div class="item-highlights">${highlights}</div>`:""}
-    <div class="item-prices"><div class="item-price"><small>Cena s DPH</small>${money(x.gross)}</div><div class="item-price item-price-net"><small>Cena bez DPH</small>${money(x.net)}</div></div>
+    ${itemPriceHtml(x)}
     <span class="item-meta">${x.name!==itemDimension(x)?x.name+" · ":""}${x.detail}</span>
+    ${canToggleGross(x)?`<label class="gross-toggle"><input type="checkbox" ${isGrossVisible(x)?"checked":""} onchange="setItemGross(${x.id},this.checked)"> Zobrazit cenu s DPH</label>`:""}
     <div class="item-actions"><button class="edit-btn" onclick="editCartItem(${x.id})">✏️ Upravit</button><button class="mini-btn" onclick="removeCartItem(${x.id})">🗑 Smazat</button></div>
   </div></div></div>`;
 }
@@ -1270,23 +1274,20 @@ function renderCategory(category){
   const items=cartItems.filter(x=>x.category===category);
   if(!items.length){box.innerHTML="";result.innerHTML="";clear.style.display="none";return;}
   box.innerHTML=items.map((x,i)=>itemCard(x,i,false)).join("");
-  const totalNet=items.reduce((a,x)=>a+x.net,0),totalGross=items.reduce((a,x)=>a+x.gross,0);
-  result.innerHTML=resultHtml([["Počet prvků",String(items.length)],["Cena bez DPH",money(totalNet)],["DPH "+data.vat+" %",money(totalGross-totalNet)]],"Cena kategorie s DPH",money(totalGross));
+  result.innerHTML=priceSummary(items,"Cena kategorie s DPH");
   clear.style.display="block";
 }
 function renderCart(){
   const box=document.getElementById("cartItems"),result=document.getElementById("cartResult"),clear=document.getElementById("cartClearBtn"),count=document.getElementById("cartCount");
   if(count)count.textContent=cartItems.length;if(!box)return;
-  const showNet=localStorage.getItem("pilaCartShowNet")!=="false";
-  document.getElementById("cartShowNet").checked=showNet;
   if(!cartItems.length){box.innerHTML='<p class="notice">Košík je zatím prázdný.</p>';result.innerHTML='';clear.style.display='none';return;}
-  box.innerHTML=cartItems.map((x,i)=>{
-    const quantity=itemHighlights(x).map(([label,val])=>val).join(" · ")||x.detail;
-    return `<div class="quote-row"><div class="quote-description"><strong>${i+1}. ${escapeQuote(x.category)} · ${escapeQuote(x.name)}</strong><span>${escapeQuote(quoteDimension(x))}</span><span>${escapeQuote(quantity)}</span><div class="quote-actions"><button class="edit-btn" onclick="editCartItem(${x.id})">Upravit</button><button class="mini-btn" onclick="removeCartItem(${x.id})">Smazat</button></div></div><div class="quote-prices"><strong>${money(x.gross)}</strong><small>s DPH</small>${showNet?`<span>${money(x.net)}</span><small>bez DPH</small>`:""}</div></div>`;
+  const order=Object.keys(CATEGORY_STYLE);
+  box.innerHTML=order.map(cat=>{
+    const items=cartItems.filter(x=>x.category===cat);if(!items.length)return "";
+    const st=CATEGORY_STYLE[cat],sum=items.reduce((a,x)=>a+x.gross,0);
+    return `<section class="group-section" style="--cat:${st.color}"><div class="group-heading"><span>${st.icon} ${cat}</span><span>${items.length} položek</span></div><div class="group-items">${items.map((x,i)=>itemCard(x,i,false)).join("")}</div></section>`;
   }).join("");
-  const totalNet=cartItems.reduce((a,x)=>a+x.net,0),totalGross=cartItems.reduce((a,x)=>a+x.gross,0);
-  result.innerHTML=`<div class="quote-total">${showNet?`<div class="quote-total-net"><span>Celkem bez DPH</span><strong>${money(totalNet)}</strong></div>`:""}<div class="quote-total-gross"><span>Celkem s DPH</span><strong>${money(totalGross)}</strong></div></div>`;
-  clear.style.display="block";
+  result.innerHTML=priceSummary(cartItems,"Celková cena s DPH");clear.style.display="block";
 }
 function escapeQuote(text){return String(text??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function quoteDimension(x){
@@ -1313,7 +1314,7 @@ function newCalculation(){
 }
 
 // Jednotkové ceny respektují skutečnou plochu po zaokrouhlení na kusy.
-function unitPriceText(net,grossPrice,unit){return `Cena za 1 ${unit}: ${money(net)} bez DPH · ${money(grossPrice)} s DPH`;}
+function unitPriceText(net,grossPrice,unit,showNet=false){return `Cena za 1 ${unit}: ${showNet?money(net)+" bez DPH · ":""}${money(grossPrice)} s DPH`;}
 function previewArea(prefix,areaOne){
   const mode=document.getElementById(prefix+"Mode")?.value;
   if(mode==="kusy")return (value(prefix+"Kusy")||0)*areaOne;
@@ -1323,7 +1324,7 @@ function previewArea(prefix,areaOne){
 function refreshUnitPrices(){
   const set=(id,text)=>{const el=document.getElementById(id);if(el)el.textContent=text;};
   const d=data.desky[document.getElementById("deskyTloustka").value];
-  set("deskyUnitPrice",unitPriceText(d.priceM2,gross(d.priceM2),"m²")+(document.getElementById("deskyTloustka").value==="24"?`\n${unitPriceText(d.priceM3,gross(d.priceM3),"m³")}`:""));
+  set("deskyUnitPrice",unitPriceText(d.priceM2,gross(d.priceM2),"m²",true)+(document.getElementById("deskyTloustka").value==="24"?`\n${unitPriceText(d.priceM3,gross(d.priceM3),"m³",true)}`:""));
   const h=data.hoblovanaPrkna.find(p=>p.id===document.getElementById("hobPrknoProduct").value);
   if(h)set("hobPrknoUnitPrice",unitPriceText(h.priceM2,gross(h.priceM2),"m²"));
   const t=data.terasy.find(p=>p.id===document.getElementById("terasyProduct").value);
@@ -1337,10 +1338,86 @@ function refreshUnitPrices(){
 }
 const originalInit=init;
 init=function(){originalInit();refreshUnitPrices();};
+let pendingGrossOverride=null;
 const originalEditCartItem=editCartItem;
-editCartItem=function(id){originalEditCartItem(id);updateHobPrknoPreview();updateOsbPreview();updatePalubkyPreview();refreshUnitPrices();};
+editCartItem=function(id){const item=cartItems.find(x=>x.id===id);if(item?.state)pendingGrossOverride=isGrossVisible(item);originalEditCartItem(id);updateHobPrknoPreview();updateOsbPreview();updatePalubkyPreview();refreshUnitPrices();};
 document.addEventListener("input",refreshUnitPrices);
 document.addEventListener("change",refreshUnitPrices);
+
+function canToggleGross(x){return ["Řezivo","Desky","Plotovky"].includes(x.category);}
+function isGrossVisible(x){return !canToggleGross(x)||x.showGross!==false;}
+function setItemGross(id,show){const item=cartItems.find(x=>x.id===id);if(item&&canToggleGross(item)){item.showGross=show;saveCart();}}
+function setAllGross(show){localStorage.setItem("pilaDefaultShowGross",String(show));cartItems.forEach(x=>{if(canToggleGross(x))x.showGross=show;});saveCart();}
+function itemPriceHtml(x){return `<div class="item-prices">${isGrossVisible(x)?`<div class="item-price"><small>Cena s DPH</small>${money(x.gross)}</div>`:""}${canToggleGross(x)?`<div class="item-price item-price-net"><small>Cena bez DPH</small>${money(x.net)}</div>`:""}</div>`;}
+// Never add a VAT-exclusive amount to a VAT-inclusive amount.
+function summaryLines(items,bigLabel="Celková cena s DPH"){
+  if(!items.length)return [];
+  const eligible=items.filter(canToggleGross),other=items.filter(x=>!canToggleGross(x));
+  const sum=(list,key)=>list.reduce((n,x)=>n+x[key],0),lines=[];
+  if(eligible.length&&items.every(isGrossVisible))lines.push([other.length?"Řezivo, desky a plotovky - bez DPH":"Celkem bez DPH",money(sum(eligible,"net"))]);
+  if(items.every(isGrossVisible))lines.push([bigLabel,money(sum(items,"gross"))]);
+  else{
+    const visible=eligible.filter(isGrossVisible),hidden=eligible.filter(x=>!isGrossVisible(x));
+    if(hidden.length)lines.push(["Položky se skrytou cenou s DPH - bez DPH",money(sum(hidden,"net"))]);
+    if(visible.length)lines.push(["Ostatní řezivo, desky a plotovky - s DPH",money(sum(visible,"gross"))]);
+    if(other.length)lines.push(["Ostatní sortiment - s DPH",money(sum(other,"gross"))]);
+  }
+  return lines;
+}
+function priceSummary(items,bigLabel){
+  const lines=summaryLines(items,bigLabel),last=lines.at(-1);
+  if(!last)return "";
+  const html=resultHtml(lines.slice(0,-1),last[0],last[1]);
+  return html+(items.some(x=>!isGrossVisible(x))&&items.some(isGrossVisible)?'<p class="notice">Součty bez DPH a s DPH jsou oddělené. Nejde o jednu společnou cenu.</p>':"");
+}
+function pdfRows(){return cartItems.map((x,i)=>({title:`${i+1}. ${x.category} - ${x.name}`,dimension:quoteDimension(x),quantity:itemHighlights(x).map(([label,val])=>val).join(" · ")||x.detail,prices:[...(canToggleGross(x)?[`${money(x.net)} bez DPH`]:[]),...(isGrossVisible(x)?[`${money(x.gross)} s DPH`]:[])]}));}
+// Offline A4 PDF: high-resolution canvas pages embedded as JPEG images.
+function createQuotePdf(){
+  const W=1240,H=1754,M=80,BOTTOM=1620,pages=[];
+  let canvas,ctx,y;
+  const date=new Intl.DateTimeFormat("cs-CZ").format(new Date());
+  const font=(size,bold=false)=>{ctx.font=`${bold?"700":"400"} ${size}px Arial, sans-serif`;};
+  function page(){canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;ctx=canvas.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);ctx.fillStyle="#173c2b";font(34,true);ctx.fillText("PILA OPLUŠTIL",M,92);ctx.fillStyle="#444";font(24);ctx.fillText("Přehled zakázky",M,130);ctx.textAlign="right";font(20);ctx.fillText(date,W-M,92);ctx.textAlign="left";ctx.strokeStyle="#b7c5bb";ctx.beginPath();ctx.moveTo(M,154);ctx.lineTo(W-M,154);ctx.stroke();y=198;}
+  function finish(){pages.push(canvas);}
+  function wrap(text,width,size,bold=false){font(size,bold);const lines=[];let line="";for(const word of String(text||"").split(/\s+/)){if(ctx.measureText(word).width>width){if(line){lines.push(line);line="";}let chunk="";for(const ch of word){if(ctx.measureText(chunk+ch).width>width&&chunk){lines.push(chunk);chunk="";}chunk+=ch;}line=chunk;continue;}const candidate=line?line+" "+word:word;if(ctx.measureText(candidate).width>width&&line){lines.push(line);line=word;}else line=candidate;}if(line)lines.push(line);return lines;}
+  page();
+  const rows=pdfRows(),lines=summaryLines(cartItems),mixed=cartItems.some(x=>!isGrossVisible(x))&&cartItems.some(isGrossVisible);
+  const totalHeight=lines.reduce((h,[label])=>h+Math.max(wrap(label,760,23,true).length*30,34)+15,50)+(mixed?65:0);
+  for(const [rowIndex,row] of rows.entries()){
+    const title=wrap(row.title,730,24,true),detail=[...wrap(row.dimension,730,21),...wrap(row.quantity,730,21)],height=Math.max(title.length*32+detail.length*29,row.prices.length*34)+38;
+    if(y+height+(rowIndex===rows.length-1?totalHeight:0)>BOTTOM){finish();page();}
+    ctx.fillStyle="#222";font(24,true);title.forEach((line,n)=>ctx.fillText(line,M,y+n*32));ctx.fillStyle="#555";font(21);detail.forEach((line,n)=>ctx.fillText(line,M,y+title.length*32+n*29));
+    ctx.textAlign="right";row.prices.forEach((line,n)=>{font(22,n===row.prices.length-1);ctx.fillStyle="#173c2b";ctx.fillText(line,W-M,y+n*34);});ctx.textAlign="left";
+    y+=height;ctx.strokeStyle="#e0e5e1";ctx.beginPath();ctx.moveTo(M,y-18);ctx.lineTo(W-M,y-18);ctx.stroke();
+  }
+  if(y+totalHeight>BOTTOM){finish();page();}
+  y+=18;ctx.fillStyle="#173c2b";font(26,true);ctx.fillText("Souhrn nabídky",M,y);y+=42;
+  lines.forEach(([label,amount])=>{const labels=wrap(label,760,23,true);ctx.fillStyle="#222";font(23,true);labels.forEach((line,n)=>ctx.fillText(line,M,y+n*30));ctx.textAlign="right";ctx.fillText(amount,W-M,y);ctx.textAlign="left";y+=Math.max(labels.length*30,34)+15;});
+  if(mixed){ctx.fillStyle="#666";font(19);ctx.fillText("Součty bez DPH a s DPH jsou uvedeny odděleně.",M,y+8);}
+  finish();
+  pages.forEach((c,i)=>{const g=c.getContext("2d");g.font="18px Arial, sans-serif";g.fillStyle="#666";g.fillText(`Pila Opluštil · ${date}`,M,H-65);g.textAlign="right";g.fillText(`Strana ${i+1} / ${pages.length}`,W-M,H-65);g.textAlign="left";});
+  return pdfFromCanvases(pages);
+}
+function pdfFromCanvases(pages){
+  const encoder=new TextEncoder(),chunks=[],offsets=[0];let length=0;
+  const append=x=>{const bytes=typeof x==="string"?encoder.encode(x):x;chunks.push(bytes);length+=bytes.length;};
+  const object=(id,body)=>{offsets[id]=length;append(`${id} 0 obj\n`);body();append("\nendobj\n");};
+  append("%PDF-1.4\n");object(1,()=>append("<< /Type /Catalog /Pages 2 0 R >>"));
+  object(2,()=>append(`<< /Type /Pages /Count ${pages.length} /Kids [${pages.map((_,i)=>`${3+i*3} 0 R`).join(" ")}] >>`));
+  pages.forEach((c,i)=>{const pageId=3+i*3,imageId=pageId+1,contentId=pageId+2;
+    object(pageId,()=>append(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im${i} ${imageId} 0 R >> >> /Contents ${contentId} 0 R >>`));
+    const jpeg=Uint8Array.from(atob(c.toDataURL("image/jpeg",.95).split(",")[1]),ch=>ch.charCodeAt(0));
+    object(imageId,()=>{append(`<< /Type /XObject /Subtype /Image /Width ${c.width} /Height ${c.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`);append(jpeg);append("\nendstream");});
+    const content=`q\n595.28 0 0 841.89 0 0 cm\n/Im${i} Do\nQ\n`;
+    object(contentId,()=>append(`<< /Length ${encoder.encode(content).length} >>\nstream\n${content}endstream`));
+  });
+  const xref=length;append(`xref\n0 ${offsets.length}\n0000000000 65535 f \n`);offsets.slice(1).forEach(offset=>append(`${String(offset).padStart(10,"0")} 00000 n \n`));append(`trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(chunks,{type:"application/pdf"});
+}
+function downloadQuotePdf(){
+  if(!cartItems.length)return alert("Nejprve přidejte do košíku položky.");
+  try{const blob=createQuotePdf(),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`Pila-Oplustil-nabidka-${new Date().toISOString().slice(0,10)}.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(e){console.error(e);alert("PDF se nepodařilo vytvořit. Zkuste nabídku otevřít v Safari nebo Chrome.");}
+}
 
 init();
 renderAllLists();
